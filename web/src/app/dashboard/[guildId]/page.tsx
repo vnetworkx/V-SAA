@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageGuild, getUserGuilds } from "@/lib/discord";
 import GuildEditor from "@/components/GuildEditor";
@@ -9,7 +10,7 @@ export default async function GuildPage({
 }: {
   params: { guildId: string };
 }) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session) redirect("/");
 
   const accessToken = (session as any).accessToken as string | undefined;
@@ -49,10 +50,5 @@ export default async function GuildPage({
         createdAt: new Date(),
       };
 
-  return (
-    <GuildEditor
-      guildId={params.guildId}
-      initialConfig={initialConfig}
-    />
-  );
+  return <GuildEditor guildId={params.guildId} initialConfig={initialConfig} />;
 }

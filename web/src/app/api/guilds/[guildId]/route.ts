@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageGuild, getUserGuilds } from "@/lib/discord";
 
 async function assertAccess(guildId: string) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
 
   if (!session) {
     return {
@@ -45,9 +46,9 @@ async function assertAccess(guildId: string) {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ guildId: string }> }
+  { params }: { params: { guildId: string } }
 ) {
-  const { guildId } = await params;
+  const { guildId } = params;
 
   const access = await assertAccess(guildId);
   if (!access.ok) return access.response;
@@ -61,9 +62,9 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ guildId: string }> }
+  { params }: { params: { guildId: string } }
 ) {
-  const { guildId } = await params;
+  const { guildId } = params;
 
   const access = await assertAccess(guildId);
   if (!access.ok) return access.response;

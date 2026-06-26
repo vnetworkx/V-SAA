@@ -1,4 +1,4 @@
-import NextAuth, { type NextAuthConfig } from "next-auth";
+import NextAuth from "next-auth";
 import Discord from "next-auth/providers/discord";
 
 export const authConfig = {
@@ -29,6 +29,6 @@ export const authConfig = {
       return session;
     },
   },
-} satisfies NextAuthConfig;
+};
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

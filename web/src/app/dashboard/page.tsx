@@ -1,28 +1,38 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
-import { getUserGuilds, canManageGuild } from "@/lib/discord";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { canManageGuild, getUserGuilds } from "@/lib/discord";
 
 export default async function DashboardPage() {
-  const session = await auth();
-  if (!session) redirect("/");
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/");
+  }
 
   const accessToken = (session as any).accessToken as string | undefined;
-  if (!accessToken) redirect("/");
+  if (!accessToken) {
+    redirect("/");
+  }
 
   const guilds = await getUserGuilds(accessToken);
-  const manageableGuilds = guilds.filter((g) => canManageGuild(g.permissions));
+
+  const managedGuilds = guilds.filter((g) => canManageGuild(g.permissions));
 
   return (
     <main style={{ padding: 24 }}>
-      <h1>Your guilds</h1>
-      <ul>
-        {manageableGuilds.map((guild) => (
-          <li key={guild.id}>
-            <Link href={`/dashboard/${guild.id}`}>{guild.name}</Link>
-          </li>
-        ))}
-      </ul>
+      <h1>Dashboard</h1>
+
+      {managedGuilds.length === 0 ? (
+        <p>No guilds you can manage were found.</p>
+      ) : (
+        <ul>
+          {managedGuilds.map((guild) => (
+            <li key={guild.id}>{guild.name}</li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

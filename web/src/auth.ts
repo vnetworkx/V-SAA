@@ -1,13 +1,13 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
-import Discord from "next-auth/providers/discord";
+import DiscordProvider from "next-auth/providers/discord";
 
-export const authConfig = {
+export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET,
   session: {
     strategy: "jwt",
   },
   providers: [
-    Discord({
+    DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
       authorization: {
@@ -20,15 +20,15 @@ export const authConfig = {
   callbacks: {
     async jwt({ token, account }) {
       if (account?.access_token) {
-        token.accessToken = account.access_token;
+        (token as any).accessToken = account.access_token;
       }
       return token;
     },
     async session({ session, token }) {
-      (session as any).accessToken = token.accessToken;
+      (session as any).accessToken = (token as any).accessToken;
       return session;
     },
   },
-} satisfies NextAuthOptions;
+};
 
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+export default NextAuth(authOptions);

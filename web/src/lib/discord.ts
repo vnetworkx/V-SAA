@@ -5,11 +5,12 @@ export type DiscordGuild = {
   icon: string | null;
 };
 
+const ADMINISTRATOR = BigInt(8);
+const MANAGE_GUILD = BigInt(32);
+
 export function canManageGuild(permissions: string): boolean {
   const perms = BigInt(permissions);
-  const ADMINISTRATOR = 0x8n;
-  const MANAGE_GUILD = 0x20n;
-  return (perms & ADMINISTRATOR) !== 0n || (perms & MANAGE_GUILD) !== 0n;
+  return (perms & ADMINISTRATOR) !== BigInt(0) || (perms & MANAGE_GUILD) !== BigInt(0);
 }
 
 export async function getUserGuilds(accessToken: string): Promise<DiscordGuild[]> {

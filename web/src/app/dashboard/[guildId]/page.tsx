@@ -28,10 +28,31 @@ export default async function GuildPage({
     where: { guildId: params.guildId },
   });
 
+  const initialConfig = config
+    ? {
+        ...config,
+        allowedRoleIds: Array.isArray(config.allowedRoleIds)
+          ? (config.allowedRoleIds as string[])
+          : [],
+      }
+    : {
+        guildId: params.guildId,
+        welcomeEnabled: false,
+        welcomeChannelId: null,
+        welcomeMessage: null,
+        autoRoleEnabled: false,
+        autoRoleId: null,
+        logChannelId: null,
+        moderationLogChannelId: null,
+        allowedRoleIds: [],
+        updatedAt: new Date(),
+        createdAt: new Date(),
+      };
+
   return (
     <GuildEditor
       guildId={params.guildId}
-      initialConfig={config ?? {}}
+      initialConfig={initialConfig}
     />
   );
 }

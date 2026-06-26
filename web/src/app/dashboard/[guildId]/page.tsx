@@ -1,58 +1,38 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageGuild, getUserGuilds } from "@/lib/discord";
-import GuildEditor from "@/components/GuildEditor";
 
-export default async function GuildPage({
-  params,
-}: {
-  params: { guildId: string };
-}) {
-  const session = await auth();
-  if (!session) redirect("/");
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
 
-  const accessToken = (session as any).accessToken as string | undefined;
-  if (!accessToken) redirect("/");
-
-  const guilds = await getUserGuilds(accessToken);
-  const allowed = guilds.some(
-    (g) => g.id === params.guildId && canManageGuild(g.permissions)
-  );
-
-  if (!allowed) {
-    return <main style={{ padding: 24 }}>No access to this guild.</main>;
+  if (!session) {
+    redirect("/");
   }
 
-  const config = await prisma.guildConfig.findUnique({
-    where: { guildId: params.guildId },
-  });
+  const accessToken = (session as any).accessToken as string | undefined;
+  if (!accessToken) {
+    redirect("/");
+  }
 
-  const initialConfig = config
-    ? {
-        ...config,
-        allowedRoleIds: Array.isArray(config.allowedRoleIds)
-          ? (config.allowedRoleIds as string[])
-          : [],
-      }
-    : {
-        guildId: params.guildId,
-        welcomeEnabled: false,
-        welcomeChannelId: null,
-        welcomeMessage: null,
-        autoRoleEnabled: false,
-        autoRoleId: null,
-        logChannelId: null,
-        moderationLogChannelId: null,
-        allowedRoleIds: [],
-        updatedAt: new Date(),
-        createdAt: new Date(),
-      };
+  const guilds = await getUserGuilds(accessToken);
+
+  const managedGuilds = guilds.filter((g) => canManageGuild(g.permissions));
 
   return (
-    <GuildEditor
-      guildId={params.guildId}
-      initialConfig={initialConfig}
-    />
+    <main style={{ padding: 24 }}>
+      <h1>Dashboard</h1>
+
+      {managedGuilds.length === 0 ? (
+        <p>No guilds you can manage were found.</p>
+      ) : (
+        <ul>
+          {managedGuilds.map((guild) => (
+            <li key={guild.id}>{guild.name}</li>
+          ))}
+        </ul>
+      )}
+    </main>
   );
 }

@@ -1,7 +1,7 @@
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth";
 import Discord from "next-auth/providers/discord";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authConfig = {
   secret: process.env.AUTH_SECRET,
   session: {
     strategy: "jwt",
@@ -29,4 +29,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-});
+} satisfies NextAuthConfig;
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

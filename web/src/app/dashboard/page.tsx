@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth/next";
+import { authConfig } from "@/auth";
 import { canManageGuild, getUserGuilds } from "@/lib/discord";
 
 export default async function DashboardPage() {
-  const session = await auth();
+  const session = await getServerSession(authConfig);
 
   if (!session) {
     redirect("/");

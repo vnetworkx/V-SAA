@@ -46,9 +46,9 @@ async function assertAccess(guildId: string) {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { guildId: string } }
+  { params }: { params: Promise<{ guildId: string }> }
 ) {
-  const { guildId } = params;
+  const { guildId } = await params;
 
   const access = await assertAccess(guildId);
   if (!access.ok) return access.response;
@@ -62,9 +62,9 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { guildId: string } }
+  { params }: { params: Promise<{ guildId: string }> }
 ) {
-  const { guildId } = params;
+  const { guildId } = await params;
 
   const access = await assertAccess(guildId);
   if (!access.ok) return access.response;

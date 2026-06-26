@@ -10,7 +10,7 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  const accessToken = (session as { accessToken?: string }).accessToken;
+  const accessToken = (session as any).accessToken as string | undefined;
 
   if (!accessToken) {
     redirect("/");

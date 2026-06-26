@@ -1,23 +1,21 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import { canManageGuild, getUserGuilds } from "@/lib/discord";
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session) {
     redirect("/");
   }
 
-  const accessToken = (session as any).accessToken as string | undefined;
+  const accessToken = (session as { accessToken?: string }).accessToken;
+
   if (!accessToken) {
     redirect("/");
   }
 
   const guilds = await getUserGuilds(accessToken);
-
   const managedGuilds = guilds.filter((g) => canManageGuild(g.permissions));
 
   return (

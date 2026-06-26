@@ -1,27 +1,42 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canManageGuild, getUserGuilds } from "@/lib/discord";
 
 async function assertAccess(guildId: string) {
   const session = await auth();
-  if (!session) return { ok: false as const, response: NextResponse.json({ error: "Not signed in" }, { status: 401 }) };
+
+  if (!session) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: "Not signed in" }, { status: 401 }),
+    };
+  }
 
   const accessToken = (session as any).accessToken as string | undefined;
+
   if (!accessToken) {
     return {
       ok: false as const,
-      response: NextResponse.json({ error: "Missing Discord access token" }, { status: 401 }),
+      response: NextResponse.json(
+        { error: "Missing Discord access token" },
+        { status: 401 }
+      ),
     };
   }
 
   const guilds = await getUserGuilds(accessToken);
-  const guild = guilds.find((g) => g.id === guildId && canManageGuild(g.permissions));
+  const guild = guilds.find(
+    (g) => g.id === guildId && canManageGuild(g.permissions)
+  );
 
   if (!guild) {
     return {
       ok: false as const,
-      response: NextResponse.json({ error: "No access to this guild" }, { status: 403 }),
+      response: NextResponse.json(
+        { error: "No access to this guild" },
+        { status: 403 }
+      ),
     };
   }
 
@@ -29,32 +44,36 @@ async function assertAccess(guildId: string) {
 }
 
 export async function GET(
-  request: Request,
-  { params }: { params: { guildId: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ guildId: string }> }
 ) {
-  const access = await assertAccess(params.guildId);
+  const { guildId } = await params;
+
+  const access = await assertAccess(guildId);
   if (!access.ok) return access.response;
 
   const config = await prisma.guildConfig.findUnique({
-    where: { guildId: params.guildId },
+    where: { guildId },
   });
 
   return NextResponse.json(config ?? {});
 }
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { guildId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ guildId: string }> }
 ) {
-  const access = await assertAccess(params.guildId);
+  const { guildId } = await params;
+
+  const access = await assertAccess(guildId);
   if (!access.ok) return access.response;
 
   const body = await request.json();
 
   const config = await prisma.guildConfig.upsert({
-    where: { guildId: params.guildId },
+    where: { guildId },
     create: {
-      guildId: params.guildId,
+      guildId,
       welcomeEnabled: Boolean(body.welcomeEnabled),
       welcomeChannelId: body.welcomeChannelId || null,
       welcomeMessage: body.welcomeMessage || null,

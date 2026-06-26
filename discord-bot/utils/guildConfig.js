@@ -1,64 +1,22 @@
-const fs = require('node:fs');
-const path = require('node:path');
+const cache = new Map();
 
-const dataDir = path.join(__dirname, '..', 'data');
-const dataFile = path.join(dataDir, 'guild-config.json');
-
-function ensureFile() {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+async function getGuildConfig(guildId) {
+  const cached = cache.get(guildId);
+  if (cached && Date.now() - cached.at < 30000) {
+    return cached.value;
   }
-  if (!fs.existsSync(dataFile)) {
-    fs.writeFileSync(dataFile, JSON.stringify({}, null, 2));
-  }
+
+  const res = await fetch(`${process.env.DASHBOARD_URL}/api/bot-config/${guildId}`, {
+    headers: {
+      "x-api-key": process.env.BOT_API_KEY,
+    },
+  });
+
+  if (!res.ok) return null;
+
+  const value = await res.json();
+  cache.set(guildId, { at: Date.now(), value });
+  return value;
 }
 
-function readAll() {
-  ensureFile();
-  const raw = fs.readFileSync(dataFile, 'utf8');
-  return JSON.parse(raw || '{}');
-}
-
-function writeAll(data) {
-  ensureFile();
-  fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
-}
-
-function defaultGuildConfig() {
-  return {
-    welcomeChannelId: null,
-    logChannelId: null,
-    autoRoleId: null,
-    welcomeTitle: 'Welcome to {server}!',
-    welcomeDescription: 'Hey {user}, welcome to **{server}**! Take a look around and enjoy your stay.'
-  };
-}
-
-function getGuildConfig(guildId) {
-  const all = readAll();
-  if (!all[guildId]) {
-    all[guildId] = defaultGuildConfig();
-    writeAll(all);
-  }
-  return all[guildId];
-}
-
-function updateGuildConfig(guildId, patch) {
-  const all = readAll();
-  if (!all[guildId]) {
-    all[guildId] = defaultGuildConfig();
-  }
-  all[guildId] = {
-    ...defaultGuildConfig(),
-    ...all[guildId],
-    ...patch
-  };
-  writeAll(all);
-  return all[guildId];
-}
-
-module.exports = {
-  getGuildConfig,
-  updateGuildConfig,
-  defaultGuildConfig
-};
+module.exports = { getGuildConfig };
